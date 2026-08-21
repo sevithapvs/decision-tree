@@ -2,77 +2,62 @@
 
 ## Project Overview
 
-This project implements an **ID3 (Iterative Dichotomiser 3) Decision Tree Classification Algorithm** on the **BigMart Sales Prediction Dataset**.
+This project implements an **ID3 (Iterative Dichotomiser 3) Decision Tree Classification Algorithm** on the **BigMart Sales Prediction dataset**.
 
-The objective of this project is to classify product sales into three categories based on product and outlet-related features.
+The original dataset contains information about products and outlets, with the goal of predicting the sales category of each product. Since ID3 works with categorical attributes and classification targets, numerical features and sales values were converted into categorical ranges before training the model.
 
-Since the original dataset contains numerical values and ID3 works with categorical attributes, numerical features and the target variable were transformed into categorical classes before training the model.
+The final model classifies **Item Outlet Sales** into three categories:
 
-The model predicts:
+* Low Sales
+* Medium Sales
+* High Sales
 
-- Low Sales
-- Medium Sales
-- High Sales
-
-The Decision Tree classifier uses the **Entropy criterion**, which follows the ID3 algorithm approach.
+The decision tree is built using the **Entropy criterion**, which represents the ID3 algorithm approach.
 
 ---
 
-## Dataset Description
+# Dataset Description
 
-Dataset Used:
+The dataset used:
 
 ```
 BigMartSalesPrediction_Train.csv
 ```
 
-The dataset contains:
+The dataset contains **8523 records** and **12 attributes**.
 
-```
-8523 records and 12 attributes
-```
+### Original Features
 
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| Item_Identifier | Unique product identifier |
-| Item_Weight | Weight of the product |
-| Item_Fat_Content | Fat content category |
-| Item_Visibility | Product visibility percentage |
-| Item_Type | Product category |
-| Item_MRP | Maximum Retail Price |
-| Outlet_Identifier | Unique outlet identifier |
-| Outlet_Establishment_Year | Year outlet was established |
-| Outlet_Size | Size of outlet |
-| Outlet_Location_Type | Outlet location category |
-| Outlet_Type | Type of outlet |
-| Item_Outlet_Sales | Target variable |
+| Feature                   | Description                       |
+| ------------------------- | --------------------------------- |
+| Item_Identifier           | Unique identifier of each product |
+| Item_Weight               | Weight of the product             |
+| Item_Fat_Content          | Fat content category              |
+| Item_Visibility           | Visibility percentage of product  |
+| Item_Type                 | Type of product                   |
+| Item_MRP                  | Maximum Retail Price              |
+| Outlet_Identifier         | Unique outlet ID                  |
+| Outlet_Establishment_Year | Year outlet was established       |
+| Outlet_Size               | Size of outlet                    |
+| Outlet_Location_Type      | Location category of outlet       |
+| Outlet_Type               | Type of outlet                    |
+| Item_Outlet_Sales         | Sales amount (Target Variable)    |
 
 ---
 
-## Project Structure
+# Libraries Used
 
-```
-BigMart-ID3-Decision-Tree/
-│
-├── BigMartSalesPrediction_Train.csv
-│
-├── id3_decision_tree.py
-│
-├── README.md
-│
-└── requirements.txt
+The following Python libraries were used:
+
+```python
+import pandas as pd
+from math import log2
 ```
 
----
+Additional libraries used:
 
-## Technologies Used
-
-- Python
-- Pandas
-- Scikit-learn
-- Matplotlib
+* Scikit-learn for Decision Tree implementation
+* Matplotlib for tree visualization
 
 ---
 
@@ -86,47 +71,84 @@ The dataset was loaded using Pandas.
 df = pd.read_csv("BigMartSalesPrediction_Train.csv")
 ```
 
-The dataset shape and first few records were examined.
+The first few rows and dataset dimensions were checked.
 
-Dataset size:
+Output:
 
 ```
-8523 rows × 12 columns
+Rows: 8523
+Columns: 12
 ```
 
 ---
 
-## 2. Missing Value Analysis
+# 2. Dataset Information Analysis
 
-Missing values were identified using:
+The dataset structure was examined using:
+
+```python
+df.info()
+```
+
+This helped identify:
+
+* Data types
+* Missing values
+* Number of records
+* Memory usage
+
+The dataset contained:
+
+* Numerical attributes
+* Categorical attributes
+* Missing values in Item Weight and Outlet Size
+
+---
+
+# 3. Handling Missing Values
+
+Missing values were checked using:
 
 ```python
 df.isnull().sum()
 ```
 
-Missing values detected:
+Missing values found:
 
-| Column | Missing Values |
-|--------|----------------|
-| Item_Weight | 1463 |
-| Outlet_Size | 2410 |
+| Column      | Missing Values |
+| ----------- | -------------- |
+| Item_Weight | 1463           |
+| Outlet_Size | 2410           |
 
-Handling strategy:
+### Filling Missing Values
 
-- `Item_Weight` missing values were replaced using the median.
-- `Outlet_Size` missing values were replaced using the mode.
+### Item Weight
 
-After preprocessing:
+Since Item Weight had low skewness, missing values were replaced using the median.
 
+```python
+df["Item_Weight"] = df["Item_Weight"].fillna(
+    df["Item_Weight"].median()
+)
 ```
-No missing values remained
+
+### Outlet Size
+
+Categorical missing values were replaced using the most frequent category.
+
+```python
+df["Outlet_Size"] = df["Outlet_Size"].fillna(
+    df["Outlet_Size"].mode()[0]
+)
 ```
+
+After preprocessing, no missing values remained.
 
 ---
 
-## 3. Duplicate Data Check
+# 4. Checking Duplicate Data
 
-Duplicate records were checked using:
+Duplicate rows were checked:
 
 ```python
 df.duplicated().sum()
@@ -138,35 +160,46 @@ Result:
 Duplicate rows: 0
 ```
 
+No duplicate records were present.
+
 ---
 
-## 4. Feature Selection
+# 5. Removing Unnecessary Columns
 
 The following columns were removed:
 
-```
-Item_Identifier
-Outlet_Identifier
-```
+* Item Identifier
+* Outlet Identifier
 
 Reason:
 
-These columns contain unique identifiers and do not provide useful information for prediction.
+These columns contain unique IDs and do not contribute meaningful information for classification.
+
+Code:
+
+```python
+df = df.drop(
+    ["Item_Identifier", "Outlet_Identifier"],
+    axis=1
+)
+```
 
 ---
 
-# Feature Transformation
+# 6. Converting Numerical Features into Categories
 
-ID3 requires categorical attributes.
+ID3 works mainly with categorical attributes.
 
-The following numerical features were converted into categorical values using quantile-based binning:
+Therefore, numerical attributes were converted into three categories using quantile-based binning.
 
-- Item_Weight
-- Item_Visibility
-- Item_MRP
-- Outlet_Establishment_Year
+Columns converted:
 
-The numerical values were divided into three categories:
+* Item Weight
+* Item Visibility
+* Item MRP
+* Outlet Establishment Year
+
+Categories created:
 
 ```
 Low
@@ -174,25 +207,29 @@ Medium
 High
 ```
 
-using:
+Example:
 
 ```python
-pd.qcut()
+df[column] = pd.qcut(
+    df[column],
+    q=3,
+    labels=["Low","Medium","High"]
+)
 ```
 
 ---
 
-# Target Variable Transformation
+# 7. Converting Target Variable
 
-The original target variable:
+The target variable:
 
 ```
 Item_Outlet_Sales
 ```
 
-was a continuous numerical value.
+was originally a continuous numerical value.
 
-Since this project performs classification, the sales values were converted into three classes:
+Since ID3 is a classification algorithm, sales values were converted into categories:
 
 ```
 Low
@@ -202,7 +239,17 @@ High
 
 using quantile binning.
 
-Final distribution:
+Code:
+
+```python
+df["Item_Outlet_Sales"] = pd.qcut(
+    df["Item_Outlet_Sales"],
+    q=3,
+    labels=["Low","Medium","High"]
+)
+```
+
+Final class distribution:
 
 ```
 Low       2845
@@ -212,21 +259,46 @@ High      2840
 
 ---
 
-# Data Encoding
+# 8. Converting Object Data into Category Format
 
-All categorical columns were converted into category datatype.
-
-```python
-astype("category")
-```
-
-Unused categories were removed using:
+All categorical columns were converted into Pandas category datatype.
 
 ```python
-remove_unused_categories()
+categorical_columns = df.select_dtypes(
+    include=["object","string"]
+).columns
+
+for column in categorical_columns:
+    df[column] = df[column].astype("category")
 ```
 
-Before model training, categorical values were encoded using:
+This ensures all categorical features have consistent data types.
+
+---
+
+# ID3 Decision Tree Implementation
+
+## Algorithm Used
+
+ID3 selects the best attribute using:
+
+### Entropy
+
+Entropy measures the impurity of the dataset.
+
+Formula:
+
+[
+Entropy(S) = -\sum p_i log_2(p_i)
+]
+
+The attribute with maximum information gain is selected as the decision node.
+
+---
+
+# Model Training
+
+The categorical values were encoded into numerical values using:
 
 ```python
 LabelEncoder()
@@ -235,87 +307,113 @@ LabelEncoder()
 Example:
 
 ```
-Low    → 0
-Medium → 1
-High   → 2
+Low    -> 0
+Medium -> 1
+High   -> 2
+```
+
+The target variable:
+
+```
+Item_Outlet_Sales
+```
+
+was separated from input features.
+
+```python
+X = data.drop(
+    "Item_Outlet_Sales",
+    axis=1
+)
+
+y = data["Item_Outlet_Sales"]
 ```
 
 ---
 
-# ID3 Decision Tree Implementation
+# Decision Tree Model
 
-## Algorithm
+The ID3 decision tree was implemented using:
 
-ID3 selects the best attribute using **Entropy** and **Information Gain**.
-
-Entropy formula:
-
-\[
-Entropy(S) = -\sum p_i log_2(p_i)
-\]
-
-The attribute with maximum information gain is selected as the decision node.
-
----
-
-# Model Training
-
-The dataset was divided into:
-
-### Input Features
-
-```
-X
-```
-
-### Target Variable
-
-```
-y
-```
-The Decision Tree model was created using:
 ```python
 DecisionTreeClassifier(
-    criterion="entropy",
-    max_depth=3,
-    random_state=42
+    criterion="entropy"
 )
 ```
-The entropy criterion allows the classifier to follow the ID3 splitting method.
+
+The entropy criterion makes the decision tree behave like an ID3 algorithm.
+
+Model parameters:
+
+```python
+max_depth = 3
+random_state = 42
+```
 
 ---
 
 # Decision Tree Visualization
-The visualization displays:
-- Root node
-- Decision conditions
-- Branches
-- Leaf nodes
-- Predicted classes
-The tree explains how product and outlet features influence sales categories.
+
+The trained tree was displayed using:
+
+```python
+plot_tree()
+```
+
+The visualization shows:
+
+* Root node
+* Decision conditions
+* Branches
+* Leaf nodes
+* Predicted classes
+
+The tree represents how different product and outlet characteristics influence sales categories.
 
 ---
 
-# Execution
+# Project Workflow
 
-The program will:
-1. Load the dataset
-2. Perform preprocessing
-3. Convert numerical features into categories
-4. Encode categorical values
-5. Train the ID3 Decision Tree model
-6. Display the decision tree visualization
+```
+Load Dataset
+      |
+      ↓
+Data Exploration
+      |
+      ↓
+Check Missing Values
+      |
+      ↓
+Handle Missing Data
+      |
+      ↓
+Remove Unnecessary Features
+      |
+      ↓
+Convert Numerical Data into Categories
+      |
+      ↓
+Convert Sales into Classes
+      |
+      ↓
+Encode Categories
+      |
+      ↓
+Train ID3 Decision Tree
+      |
+      ↓
+Visualize Decision Tree
+```
+
+---
 
 ---
 
 # Results
-The project successfully:
-- Cleaned and preprocessed the BigMart dataset
-- Handled missing values
-- Converted numerical attributes into categorical attributes
-- Implemented an ID3-based Decision Tree classifier
-- Generated a visual representation of the decision tree
-- Classified products into Low, Medium, and High sales categories
----
+* Cleaned the BigMart dataset
+* Converted numerical attributes into categorical attributes
+* Applied ID3 Decision Tree Classification
+* Generated a decision tree visualization
+* Classified products into Low, Medium, and High sales categories
 
-Implementation of ID3 Decision Tree Algorithm on BigMart Sales Dataset.
+---
